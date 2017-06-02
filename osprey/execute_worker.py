@@ -112,10 +112,19 @@ def initialize_trial(strategy, searchspace, estimator, config_sha1,
 
         # make sure we get _all_ the parameters, including defaults on the
         # estimator class, to save in the database
-        params = clone(estimator).set_params(**params).get_params()
-        params = dict((k, v) for k, v in iteritems(params)
-                      if not (isinstance(v, BaseEstimator) or isinstance(v, OrderedDict)) and
-                      (k != 'steps'))
+        tmp_params = clone(estimator).set_params(**params).get_params()
+        params = {}
+        for k, v in iteritems(tmp_params):
+            if not isinstance(v, (BaseEstimator, OrderedDict, np.ndarray)) and (k != 'steps'):
+                try:
+                    v = v.item()
+                    params[k] = v
+                except AttributeError:
+                    params[k] = v
+
+        # params = dict((k, v) for k, v in iteritems(params)
+        #               if not (isinstance(v, BaseEstimator) or isinstance(v, OrderedDict)) and
+        #               (k != 'steps'))
 
         t = Trial(status='PENDING', parameters=params, host=gethostname(),
                   user=getuser(), started=datetime.now(),
