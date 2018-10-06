@@ -8,8 +8,8 @@ env:
 
 branches:
   only:
+    - Development
     - master
-    - development
 
 install:
     - source devtools/travis-ci/install_miniconda.sh
