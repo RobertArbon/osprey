@@ -8,7 +8,7 @@ env:
 
 branches:
   only:
-    - master
+    - development
 
 install:
     - source devtools/travis-ci/install_miniconda.sh
@@ -30,7 +30,7 @@ deploy:
      skip_cleanup: true
      local-dir: docs/_deploy/
      on:
-       branch: Development
+       branch: master
        condition: "$CONDA_PY = 3.5"
      region: us-east-1
      detect_encoding: true
