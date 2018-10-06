@@ -13,24 +13,13 @@ except ImportError:
     # hyperopt is optional, but required for hyperopt_tpe()
     pass
 
-try:
-    from GPy import kern
-    from GPy.kern import RBF, Fixed, Bias
-    from GPy.util.linalg import tdot
-    from GPy.models import GPRegression
-    from scipy.optimize import minimize
-    # If the GPy modules fail we won't do this unnecessarily.
-    from .entry_point import load_entry_point
-    KERNEL_BASE_CLASS = kern.src.kern.Kern
-except:
-    # GPy is optional, but required for gp
-    GPRegression = kern = minimize = None
-    pass
 from .search_space import EnumVariable
+from .acquisition_functions import AcquisitionFunction
+from .surrogate_models import MaximumLikelihoodGaussianProcess, GaussianProcessKernel
 
 try:
     from SALib.sample import sobol_sequence as ss
-except:
+except ImportError:
     ss = None
     pass
 
@@ -87,7 +76,7 @@ class SobolSearch(BaseStrategy):
     _SKIP = int(1e4)
 
     def __init__(self, length=1000):
-        #TODO length should be n_trials.  But this doesn't seem to be accessible to strategies without major re-write.
+        # TODO length should be n_trials.  But this doesn't seem to be accessible to strategies without major re-write.
         self.sequence = None
         self.length = length
         self.n_dims = 0
@@ -95,7 +84,7 @@ class SobolSearch(BaseStrategy):
         self.counter = 0
 
     def _set_sequence(self):
-        #TODO could get rid of first part of sequence
+        # TODO could get rid of first part of sequence
         self.sequence = ss.sample(self.length + self._SKIP, self.n_dims)
 
     def _from_unit_cube(self, result, searchspace):
@@ -106,7 +95,7 @@ class SobolSearch(BaseStrategy):
         # Sobol needs to be reverse-transformed.
         out = {}
         for gpvalue, var in zip(result, searchspace):
-            out[var.name] = var.point_from_gp(float(gpvalue))
+            out[var.name] = var.point_from_unit(float(gpvalue))
         return out
 
     def suggest(self, history, searchspace):
@@ -242,8 +231,6 @@ class HyperoptTPE(BaseStrategy):
 
         return chosen_params
 
-
-
     @staticmethod
     def _hyperopt_fmin_random_kwarg(random):
         if 'rstate' in inspect.getargspec(fmin).args:
@@ -255,8 +242,9 @@ class HyperoptTPE(BaseStrategy):
         return kwargs
 
 
-class GP(BaseStrategy):
-    short_name = 'gp'
+class Bayes(BaseStrategy):
+    short_name = 'bayes'
+    # TODO : n_iter, max_iter should be in acquisition params
 
     def __init__(self, kernels=None, acquisition=None, seed=None, seeds=1, n_iter=50, max_feval=5E4, max_iter=1E5):
         self.seed = seed
@@ -264,136 +252,14 @@ class GP(BaseStrategy):
         self.max_feval = max_feval
         self.max_iter = max_iter
         self.n_iter = n_iter
-        self.model = None
         self.n_dims = None
-        self.kernel = None
         if kernels is None:
             kernels = [{'name': 'GPy.kern.Matern52', 'params': {'ARD': True},
-                        'options': {'independent': False}}]
-        self._kerns = kernels
+                              'options': {'independent': False}}]
+        self.kernel_params = kernels
         if acquisition is None:
             acquisition = {'name': 'osprey', 'params': {}}
-        self.acquisition_function = acquisition
-        self._acquisition_function = None
-        self._set_acquisition()
-
-    def _create_kernel(self):
-        # Check kernels
-        kernels = self._kerns
-        if not isinstance(kernels, list):
-            raise RuntimeError('Must provide enumeration of kernels')
-        for kernel in kernels:
-            if sorted(list(kernel.keys())) != ['name', 'options', 'params']:
-                raise RuntimeError(
-                    'strategy/params/kernels must contain keys: "name", "options", "params"')
-
-        # Turn into entry points.
-        # TODO use eval to allow user to specify internal variables for kernels (e.g. V) in config file.
-        kernels = []
-        for kern in self._kerns:
-            params = kern['params']
-            options = kern['options']
-            name = kern['name']
-            kernel_ep = load_entry_point(name, 'strategy/params/kernels')
-            if issubclass(kernel_ep, KERNEL_BASE_CLASS):
-                if options['independent']:
-                    #TODO Catch errors here?  Estimator entry points don't catch instantiation errors
-                    kernel = np.sum([kernel_ep(1, active_dims=[i], **params) for i in range(self.n_dims)])
-                else:
-                    kernel = kernel_ep(self.n_dims, **params)
-            if not isinstance(kernel, KERNEL_BASE_CLASS):
-                raise RuntimeError('strategy/params/kernel must load a'
-                                   'GPy derived Kernel')
-            kernels.append(kernel)
-        self.kernel = np.sum(kernels)
-
-    def _fit_model(self, X, Y):
-        model = GPRegression(X, Y, self.kernel)
-        model.optimize_restarts(num_restarts=20, verbose=False)
-        # model.optimize(messages=False, max_f_eval=self.max_feval)
-        self.model = model
-
-    def _get_random_point(self):
-        return np.array([np.random.uniform(low=0., high=1.)
-                         for i in range(self.n_dims)])
-
-    def _is_var_positive(self, var):
-
-        if np.any(var < 0):
-            # RuntimeError may be overkill
-            raise RuntimeError('Negative variance predicted from regression model.')
-        else:
-            return True
-
-    def _ei(self, x, y_mean, y_var):
-        y_std = np.sqrt(y_var)
-        y_best = self.model.Y.max(axis=0)
-        z = (y_mean - y_best)/y_std
-        result = y_std*(z*norm.cdf(z) + norm.pdf(z))
-        return result
-
-    def _ucb(self, x, y_mean, y_var, kappa=1.0):
-        result = y_mean + kappa*np.sqrt(y_var)
-        return result
-
-    def _osprey(self, x, y_mean, y_var):
-        return (y_mean+y_var).flatten()
-
-    def _optimize(self, init=None):
-        if not init:
-            # TODO make this get sobol points?
-            init = self._get_random_point()
-
-        # Objective function
-        def z(x):
-            # TODO make spread of points around x and take mean value.
-            x = x.copy().reshape(-1, self.n_dims)
-            y_mean, y_var = self.model.predict(x)
-            # This code is for debug/testing phase only.
-            # Ideally we should test for negative variance regardless of the AF.
-            # However, we want to recover the original functionality of Osprey, hence the conditional block.
-            # TODO remove this.
-            if self.acquisition_function['name'] == 'osprey':
-                af = self._acquisition_function(x, y_mean=y_mean, y_var=y_var)
-            elif self.acquisition_function['name'] in ['ei', 'ucb']:
-                # y_var = np.abs(y_var)
-                if self._is_var_positive(y_var):
-                    af = self._acquisition_function(x, y_mean=y_mean, y_var=y_var)
-            return (-1)*af
-
-        # Optimization loop
-        acquisition_fns = []
-        candidates = []
-        for i in range(self.n_iter):
-            init = self._get_random_point()
-            res = minimize(z, init, bounds=self.n_dims*[(0., 1.)],
-                            options={'maxiter': self.max_iter, 'disp': 0})
-            candidates.append(res.x)
-            acquisition_fns.append(res.fun)
-
-        # Choose the best
-        acquisition_fns = np.array(acquisition_fns).flatten()
-        candidates = np.array(candidates)
-        best_index = int(np.argmin(acquisition_fns))
-        best_candidate = candidates[best_index]
-        return best_candidate
-
-    def _set_acquisition(self):
-        if isinstance(self.acquisition_function, list):
-            raise RuntimeError('Must specify only one acquisition function')
-        if sorted(self.acquisition_function.keys()) != ['name', 'params']:
-            raise RuntimeError('strategy/params/acquisition must contain keys '
-                               '"name" and "params"')
-        if self.acquisition_function['name'] not in ['ei', 'ucb', 'osprey']:
-            raise RuntimeError('strategy/params/acquisition name must be one of '
-                               '"ei", "ucb", "osprey"')
-
-        f = eval('self._'+self.acquisition_function['name'])
-
-        def g(x, y_mean, y_var):
-            return f(x, y_mean, y_var, **self.acquisition_function['params'])
-
-        self._acquisition_function = g
+        self.acquisition_params = acquisition
 
     def _get_data(self, history, searchspace):
         X = []
@@ -407,7 +273,7 @@ class GP(BaseStrategy):
                 # not sure how to deal with these yet
                 continue
 
-            point = searchspace.point_to_gp(param_dict)
+            point = searchspace.point_to_unit(param_dict)
             if status == 'SUCCEEDED':
                 X.append(point)
                 Y.append(np.mean(scores))
@@ -423,7 +289,7 @@ class GP(BaseStrategy):
                 np.array(V).reshape(-1, 1),
                 np.array(ignore).reshape(-1, self.n_dims))
 
-    def _from_gp(self, result, searchspace):
+    def _from_unit(self, result, searchspace):
 
         # Note that GP only deals with float-valued variables, so we have
         # a transform step on either side, where int and enum valued variables
@@ -431,8 +297,7 @@ class GP(BaseStrategy):
         # GP needs to be reverse-transformed.
         out = {}
         for gpvalue, var in zip(result, searchspace):
-            out[var.name] = var.point_from_gp(float(gpvalue))
-
+            out[var.name] = var.point_from_unit(float(gpvalue))
         return out
 
     def _is_within(self, point, X, tol=1E-2):
@@ -441,11 +306,6 @@ class GP(BaseStrategy):
         return False
 
     def suggest(self, history, searchspace, max_tries=5):
-        if not GPRegression:
-            raise ImportError('No module named GPy')
-        if not minimize:
-            raise ImportError('No module named SciPy')
-
         if len(history) < self.seeds:
             return RandomSearch().suggest(history, searchspace)
 
@@ -453,14 +313,25 @@ class GP(BaseStrategy):
 
         X, Y, V, ignore = self._get_data(history, searchspace)
         # TODO make _create_kernel accept optional args.
-        self._create_kernel()
-        self._fit_model(X, Y)
-        suggestion = self._optimize()
+        # TODO make type of model dependent on input param
+        # Define and fit model
+        kernel = GaussianProcessKernel(self.kernel_params, self.n_dims)
+        model = MaximumLikelihoodGaussianProcess(X=X, Y=Y, kernel=kernel.kernel,
+                                                 max_feval=self.max_feval)
+        model.fit()
+
+        # Define acquisition function and get best candidate
+        af = AcquisitionFunction(surrogate=model,
+                                 acquisition_params=self.acquisition_params,
+                                 n_dims=self.n_dims,
+                                 n_iter=self.n_iter,
+                                 max_iter=self.max_iter)
+        suggestion = af.get_best_candidate()
 
         if suggestion in ignore or self._is_within(suggestion, X):
             return RandomSearch().suggest(history, searchspace)
 
-        return self._from_gp(suggestion, searchspace)
+        return self._from_unit(suggestion, searchspace)
 
 
 class GridSearch(BaseStrategy):

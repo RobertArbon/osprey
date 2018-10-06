@@ -147,11 +147,14 @@ def test_DSVDatasetLoader_1():
 
 
 def test_MDTrajDatasetLoader_1():
-    from mdtraj.testing import get_fn
-
-    loader = MDTrajDatasetLoader(get_fn('legacy_msmbuilder_trj0.lh5'))
+    from msmbuilder.example_datasets import FsPeptide
+    # TODO this need .get to work when the files haven't already been downloaded.
+    fs_pept = FsPeptide()
+    
+    loader = MDTrajDatasetLoader(os.path.join(fs_pept.data_dir, '*.xtc'),
+                                 topology=os.path.join(fs_pept.data_dir, 'fs-peptide.pdb'))
     X, y = loader.load()
-    assert X[0].n_frames == 501
+    assert len(X) == 28
     assert y is None
 
 
