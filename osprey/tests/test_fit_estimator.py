@@ -44,3 +44,20 @@ def test_2():
                                   verbose=0)
     np.testing.assert_array_equal(out['n_train_samples'], [11, 10])
     np.testing.assert_array_equal(out['n_test_samples'], [10, 11])
+
+
+def test_3():
+    try:
+        from pyemma.msm import MaximumLikelihoodMSM
+    except ImportError as e:
+        raise SkipTest(e)
+
+    X = [np.random.randint(2, size=10), np.random.randint(2, size=11)]
+    out = fit_and_score_estimator(MaximumLikelihoodMSM(), {'score_k': 2},
+                                  cv=2,
+                                  X=X,
+                                  y=None,
+                                  verbose=0)
+    # This shouldn't pass!
+    np.testing.assert_array_equal(out['n_train_samples'], [11, 10])
+    np.testing.assert_array_equal(out['n_test_samples'], [10, 11])

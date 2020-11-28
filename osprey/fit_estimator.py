@@ -17,7 +17,7 @@ from sklearn.model_selection import check_cv
 from sklearn.model_selection._validation import _safe_split, _score
 
 from .utils import check_arrays, num_samples
-from .utils import short_format_time, is_msmbuilder_estimator
+from .utils import short_format_time, is_msmbuilder_estimator, is_pyemma_estimator
 
 
 if LooseVersion(sklearn.__version__) < LooseVersion('0.16.1'):
@@ -45,7 +45,6 @@ def fit_and_score_estimator(estimator, parameters, cv, X, y=None, scoring=None,
         The scores on the training and test sets, as well as the mean test set
         score.
     """
-
     scorer = check_scoring(estimator, scoring=scoring)
     n_samples = num_samples(X)
     X, y = check_arrays(X, y, allow_lists=True, sparse_format='csr',
@@ -141,9 +140,11 @@ def _fit_and_score(estimator, X, y, scorer, train, test, verbose, parameters,
 
     scoring_time = time.time() - start_time
 
-    msmbuilder_api = is_msmbuilder_estimator(estimator)
-    n_samples_test = num_samples(X_test, is_nested=msmbuilder_api)
-    n_samples_train = num_samples(X_train, is_nested=msmbuilder_api)
+    # With PyEMMA and MSMBuilder, observations are nested in separate lists not just in a single
+    # array.
+    is_nested = is_msmbuilder_estimator(estimator) or is_pyemma_estimator(estimator)
+    n_samples_test = num_samples(X_test, is_nested=is_nested)
+    n_samples_train = num_samples(X_train, is_nested=is_nested)
     if verbose > 2:
         msg += ", score=%f" % test_score
     if verbose > 1:

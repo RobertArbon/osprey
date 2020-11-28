@@ -166,18 +166,34 @@ def expand_path(path, base='.'):
     return path
 
 
+def estimator_in_package(estimator, package):
+    """
+    checks to see if estimator is in package. If estimator is a skl Pipeline
+    then it checks each step
+    """
+    package_estimators = import_all_estimators(package).values()
+
+    out = estimator.__class__ in package_estimators
+    if isinstance(estimator, Pipeline):
+        out = any(step.__class__ in package_estimators
+                  for name, step in estimator.steps)
+    return out
+
+
 def is_msmbuilder_estimator(estimator):
     try:
         import msmbuilder
     except ImportError:
         return False
-    msmbuilder_estimators = import_all_estimators(msmbuilder).values()
+    return estimator_in_package(estimator, msmbuilder)
 
-    out = estimator.__class__ in msmbuilder_estimators
-    if isinstance(estimator, Pipeline):
-        out = any(step.__class__ in msmbuilder_estimators
-                  for name, step in estimator.steps)
-    return out
+
+def is_pyemma_estimator(estimator):
+    try:
+        import pyemma
+    except ImportError:
+        return False
+    return estimator_in_package(estimator, pyemma)
 
 
 def _assert_all_finite(X):
