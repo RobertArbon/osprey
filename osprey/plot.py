@@ -24,7 +24,7 @@ def nonconstant_parameters(data):
     assert len(data) > 0
     df = pd.DataFrame([d['parameters'] for d in data])
     # http://stackoverflow.com/a/20210048/1079728
-    filtered = df.loc[:, (df != df.ix[0]).any()]
+    filtered = df.loc[:, (df != df.iloc[0]).any()]
     return filtered
 
 
