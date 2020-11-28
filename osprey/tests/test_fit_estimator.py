@@ -11,7 +11,7 @@ from osprey.fit_estimator import fit_and_score_estimator
 
 
 def test_1():
-    X, y = make_regression(n_features=10)
+    X, y = make_regression(n_samples=300, n_features=10)
 
     lasso = Lasso()
     params = {'alpha': 2}
