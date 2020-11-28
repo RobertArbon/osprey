@@ -22,7 +22,7 @@ def test_1():
                               '-f', 'config.yaml'])
         assert os.path.exists('config.yaml')
         with open('config.yaml', 'rb') as f:
-            yaml.load(f)
+            yaml.load(f, Loader=yaml.SafeLoader)
         Config('config.yaml')
 
     finally:

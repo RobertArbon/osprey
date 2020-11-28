@@ -372,7 +372,7 @@ class Config(object):
 
 
 def parse(f):
-    res = yaml.load(f)
+    res = yaml.load(f, Loader=yaml.SafeLoader)
     if res is None:
         res = {}
 
