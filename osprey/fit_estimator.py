@@ -6,7 +6,10 @@ from distutils.version import LooseVersion
 import numpy as np
 import sklearn
 from sklearn.base import is_classifier, clone
-from sklearn.metrics.scorer import check_scoring
+try:
+    from sklearn.metrics import check_scoring
+except ModuleNotFoundError:
+    from sklearn.metrics.scorer import check_scoring
 # TODO: Remove old import? externals.joblib deprecated as of 0.23
 try:
     from joblib import Parallel, delayed
