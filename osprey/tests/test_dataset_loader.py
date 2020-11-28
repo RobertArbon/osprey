@@ -186,7 +186,7 @@ def test_MDTrajDatasetLoader_1():
     finally:
         shutil.rmtree(dirname)
 
-
+@skipif(not HAVE_MSMBUILDER, 'this test requires MSMBuilder')
 def test_MSMBuilderDatasetLoader_1():
     # TODO Why does this work when other msmbuilder imports don't?
     from msmbuilder.dataset import dataset
