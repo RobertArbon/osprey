@@ -4,14 +4,15 @@ sudo: false
 
 env:
     matrix:
-        - CONDA_PY=3.5
+#        - CONDA_PY=3.5
         - CONDA_PY=3.6
         - CONDA_PY=3.7
-        - CONDA_PY=3.8
+#        - CONDA_PY=3.8
 branches:
   only:
     - Development
-    - master
+    - update_to_py37
+#    - master
 
 install:
     - source devtools/travis-ci/install_miniconda.sh
