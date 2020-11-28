@@ -7,7 +7,12 @@ import numpy as np
 import sklearn
 from sklearn.base import is_classifier, clone
 from sklearn.metrics.scorer import check_scoring
-from sklearn.externals.joblib import Parallel, delayed
+# TODO: Remove old import? externals.joblib deprecated as of 0.23
+try:
+    from joblib import Parallel, delayed
+except ModuleNotFoundError:
+    from sklearn.externals.joblib import Parallel, delayed
+
 from sklearn.model_selection import check_cv
 from sklearn.model_selection._validation import _safe_split, _score
 

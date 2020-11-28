@@ -3,7 +3,12 @@ from __future__ import print_function, absolute_import, division
 import sys
 from six import iteritems
 import numpy as np
-from numpy.testing.decorators import skipif
+# TODO remove compat with py<=3.6
+try:
+    from numpy.testing import dec
+    skipif = dec.skipif
+except ModuleNotFoundError:
+    from numpy.testing.decorators import skipif
 
 from osprey.search_space import SearchSpace
 from osprey.search_space import IntVariable, EnumVariable, FloatVariable

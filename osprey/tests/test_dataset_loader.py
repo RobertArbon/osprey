@@ -6,8 +6,17 @@ from nose.plugins.skip import SkipTest
 
 import numpy as np
 import sklearn.datasets
-from sklearn.externals.joblib import dump
-from numpy.testing.decorators import skipif
+# TODO remove old import?
+try:
+    from joblib import dump
+except ModuleNotFoundError:
+    from sklearn.externals.joblib import dump
+# TODO remove compat with py<=3.6
+try:
+    from numpy.testing import dec
+    skipif = dec.skipif
+except ModuleNotFoundError:
+    from numpy.testing.decorators import skipif
 
 from osprey.dataset_loaders import (DSVDatasetLoader, FilenameDatasetLoader,
                                     JoblibDatasetLoader, HDF5DatasetLoader,

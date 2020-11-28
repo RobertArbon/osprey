@@ -7,7 +7,13 @@ import shutil
 import subprocess
 import tempfile
 from distutils.spawn import find_executable
-from numpy.testing.decorators import skipif
+# TODO remove compat with py<=3.6
+try:
+    from numpy.testing import dec
+    skipif = dec.skipif
+except ModuleNotFoundError:
+    from numpy.testing.decorators import skipif
+
 from nose.plugins.skip import SkipTest
 
 

@@ -6,7 +6,12 @@ import tempfile
 import unittest
 from argparse import Namespace
 import numpy as np
-from numpy.testing.decorators import skipif
+# TODO remove compat with py<=3.6
+try:
+    from numpy.testing import dec
+    skipif = dec.skipif
+except ModuleNotFoundError:
+    from numpy.testing.decorators import skipif
 
 try:
     import pylearn2

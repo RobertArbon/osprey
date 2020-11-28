@@ -219,7 +219,7 @@ class JoblibDatasetLoader(BaseDatasetLoader):
     short_name = 'joblib'
 
     def __init__(self, filenames, x_name=None, y_name=None,
-                 system_joblib=False):
+                 system_joblib=True):
         self.filenames = filenames
         self.x_name = x_name
         self.y_name = y_name

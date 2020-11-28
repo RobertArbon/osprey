@@ -4,7 +4,13 @@ import sys
 import numpy as np
 import scipy.stats
 from six.moves import xrange
-from numpy.testing.decorators import skipif
+# backwards compat with python <=3.6
+try:
+    from numpy.testing import dec
+    skipif = dec.skipif
+except ModuleNotFoundError:
+    from numpy.testing.decorators import skipif
+
 try:
     from hyperopt import pyll
 except ImportError:
