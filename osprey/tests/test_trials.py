@@ -7,6 +7,7 @@ import tempfile
 
 from osprey.trials import make_session, Trial
 
+# TODO : create test that pulls single project from db of multiple projects
 
 def test_1():
     cwd = os.path.abspath(os.curdir)

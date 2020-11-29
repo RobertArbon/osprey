@@ -14,9 +14,9 @@ try:
 except ModuleNotFoundError:
     from numpy.testing.decorators import skipif
 
-from nose.plugins.skip import SkipTest
+# from nose.plugins.skip import SkipTest
 
-
+# TODO need Pyemma analogues of these tests.
 try:
     __import__('msmbuilder.example_datasets')
     HAVE_MSMBUILDER = True
@@ -28,10 +28,11 @@ OSPREY_BIN = find_executable('osprey')
 
 @skipif(not HAVE_MSMBUILDER, 'this test requires MSMBuilder')
 def test_msmbuilder_skeleton():
-    try:
-        from msmbuilder.example_datasets import FsPeptide
-    except ImportError as e:
-        raise SkipTest(e)
+    from msmbuilder.example_datasets import FsPeptide
+    # try:
+    #     from msmbuilder.example_datasets import FsPeptide
+    # except ImportError as e:
+    #     raise SkipTest(e)
 
     assert OSPREY_BIN is not None
     cwd = os.path.abspath(os.curdir)
@@ -56,10 +57,11 @@ def test_msmbuilder_skeleton():
 
 @skipif(not HAVE_MSMBUILDER, 'this test requires MSMBuilder')
 def test_msmb_feat_select_skeleton():
-    try:
-        from msmbuilder.example_datasets import FsPeptide
-    except ImportError as e:
-        raise SkipTest(e)
+    from msmbuilder.example_datasets import FsPeptide
+    # try:
+    #     from msmbuilder.example_datasets import FsPeptide
+    # except ImportError as e:
+    #     raise SkipTest(e)
 
     assert OSPREY_BIN is not None
     cwd = os.path.abspath(os.curdir)

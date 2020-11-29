@@ -13,8 +13,9 @@ except ModuleNotFoundError:
 
 try:
     from hyperopt import pyll
+    HAVE_HYPEROPT = True
 except ImportError:
-    pass
+    HAVE_HYPEROPT = False
 
 from osprey.search_space import SearchSpace
 from osprey.search_space import IntVariable, FloatVariable, EnumVariable
@@ -56,8 +57,9 @@ def test_2_1():
     values = [s.rvs()['a'] for _ in xrange(100)]
     _run_chi2_test(values, bin_edges=range(5))
 
-
-@skipif('hyperopt.pyll' not in sys.modules, 'this test requires hyperopt')
+# TODO : why does old skipif check in sys.modules rather than test import?
+# @skipif('hyperopt.pyll' not in sys.modules, 'this test requires hyperopt')
+@skipif(not HAVE_HYPEROPT, "this test requires hyperopt")
 def test_2_2():
     s = SearchSpace()
     s.add_int('a', 0, 3)
@@ -74,8 +76,8 @@ def test_3_1():
     assert all(-2 < v < 2 for v in values)
     _run_chi2_test(values, bin_edges=np.linspace(-2, 2, 10))
 
-
-@skipif('hyperopt.pyll' not in sys.modules, 'this test requires hyperopt')
+# @skipif('hyperopt.pyll' not in sys.modules, 'this test requires hyperopt')
+@skipif(not HAVE_HYPEROPT, "this test requires hyperopt")
 def test_3_2():
     s = SearchSpace()
     s.add_float('b', -2, 2)
@@ -94,8 +96,8 @@ def test_4_1():
     assert all(v in [True, False] for v in values)
     _run_chi2_test(np.array(values, dtype=int), bin_edges=range(3))
 
-
-@skipif('hyperopt.pyll' not in sys.modules, 'this test requires hyperopt')
+# @skipif('hyperopt.pyll' not in sys.modules, 'this test requires hyperopt')
+@skipif(not HAVE_HYPEROPT, "this test requires hyperopt")
 def test_4_2():
     s = SearchSpace()
     s.add_enum('c', [True, False])
@@ -120,7 +122,8 @@ def test_5_1():
     _run_chi2_test(values, bin_edges)
 
 
-@skipif('hyperopt.pyll' not in sys.modules, 'this test requires hyperopt')
+# @skipif('hyperopt.pyll' not in sys.modules, 'this test requires hyperopt')
+@skipif(not HAVE_HYPEROPT, "this test requires hyperopt")
 def test_5_2():
     s = SearchSpace()
     s.add_float('a', 1e-5, 1, warp='log')
@@ -163,6 +166,7 @@ def test_gp_3():
     assert 10.0 == v.point_from_unit(v.point_to_unit(10.1))
 
 
+# TODO : enum variables should map to corners of hypercube
 def test_gp_4():
     v = EnumVariable('name', ['a', 'b', 'c'])
     assert 'a' == v.point_from_unit(v.point_to_unit('a'))

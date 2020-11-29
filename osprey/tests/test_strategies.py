@@ -16,8 +16,15 @@ from osprey.strategies import RandomSearch, HyperoptTPE, Bayes, GridSearch
 
 try:
     from hyperopt import hp, fmin, tpe, Trials
+    HAVE_HYPEROPT = True
 except:
-    pass
+    HAVE_HYPEROPT = False
+
+try:
+    import gpy
+    HAVE_GPY = True
+except:
+    HAVE_GPY = False
 
 
 def test_random():
@@ -65,6 +72,7 @@ def test_check_repeated_params():
         assert not grid_search4.is_repeated_suggestion(params, history)
 
 
+@skipif(not HAVE_HYPEROPT, "this test requires Hyperopt")
 def hyperopt_x2_iterates(n_iters=100):
     iterates = []
     trials = Trials()
@@ -82,6 +90,7 @@ def hyperopt_x2_iterates(n_iters=100):
     return np.array(iterates)
 
 
+@skipif(not HAVE_HYPEROPT, "this test requires Hyperopt")
 def our_x2_iterates(n_iters=100):
     history = []
     searchspace = SearchSpace()
@@ -100,7 +109,8 @@ def our_x2_iterates(n_iters=100):
     return np.array([h[0]['x'] for h in history])
 
 
-@skipif('hyperopt.fmin' not in sys.modules, 'this test requires hyperopt')
+# @skipif('hyperopt.fmin' not in sys.modules, 'this test requires hyperopt')
+@skipif(not HAVE_HYPEROPT, "this test requires Hyperopt")
 def test_1():
     ours = our_x2_iterates(25)
     ref = hyperopt_x2_iterates(25)
@@ -108,7 +118,8 @@ def test_1():
     np.testing.assert_array_equal(ref, ours)
 
     
-@skipif('GPy' not in sys.modules, 'this test requires GPy')
+# @skipif('GPy' not in sys.modules, 'this test requires GPy')
+@skipif(not HAVE_GPY, "this test requires GPy")
 def test_gp():
     searchspace = SearchSpace()
     searchspace.add_float('x', -10, 10)

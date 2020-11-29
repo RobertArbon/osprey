@@ -9,6 +9,7 @@ from osprey.utils import is_json_serializable
 import numpy as np
 from sklearn.base import BaseEstimator
 
+
 def test_is_json_serializable():
     a = BaseEstimator()
     b = np.array([1, 2, 3], dtype=int)
@@ -20,6 +21,7 @@ def test_is_json_serializable():
         assert(~is_json_serializable(obj))
     for obj in [e, f, g, h, i]:
         assert(is_json_serializable(obj))
+
 
 def test_dict_merge_1():
     base = {'a': 1}

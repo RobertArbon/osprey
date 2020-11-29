@@ -14,6 +14,7 @@ from osprey.trials import Trial
 from osprey.search_space import IntVariable, FloatVariable, EnumVariable
 from osprey.strategies import RandomSearch, HyperoptTPE, Bayes
 
+import warnings
 
 os.environ['OSPREYRC'] = ' '
 
@@ -24,21 +25,24 @@ def test_estimator_pickle():
     with tempfile.NamedTemporaryFile('w+b', 0) as f:
 
         cPickle.dump(KMeans(), f)
-
         config = Config.fromdict({
             'estimator': {'pickle': f.name}
         }, check_fields=False)
+
         assert isinstance(config.estimator(), KMeans)
 
 
 def test_estimator_eval_1():
-    config = Config.fromdict({
-        'estimator': {
-            'eval': 'KMeans()',
-            'eval_scope': 'sklearn',
-        }
-    }, check_fields=False)
-    assert isinstance(config.estimator(), KMeans)
+    # TODO: why is this the only call to sklearn that produces the FutureWarnings?  What about eval_1?
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=FutureWarning)
+        config = Config.fromdict({
+            'estimator': {
+                'eval': 'KMeans()',
+                'eval_scope': 'sklearn',
+            }
+        }, check_fields=False)
+        assert isinstance(config.estimator(), KMeans)
 
 
 def test_estimator_eval_2():
