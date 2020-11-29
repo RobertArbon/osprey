@@ -26,7 +26,7 @@ except:
 OSPREY_BIN = find_executable('osprey')
 
 
-# @skipif(not HAVE_MSMBUILDER, 'this test requires MSMBuilder')
+@skipif(not HAVE_MSMBUILDER, 'this test requires MSMBuilder')
 def test_msmbuilder_skeleton():
     try:
         from msmbuilder.example_datasets import FsPeptide
@@ -54,7 +54,7 @@ def test_msmbuilder_skeleton():
         shutil.rmtree(dirname)
 
 
-# @skipif(not HAVE_MSMBUILDER, 'this test requires MSMBuilder')
+@skipif(not HAVE_MSMBUILDER, 'this test requires MSMBuilder')
 def test_msmb_feat_select_skeleton():
     try:
         from msmbuilder.example_datasets import FsPeptide
