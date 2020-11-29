@@ -34,8 +34,6 @@ test:
     - nose
     - nose-timer
     - gpy
-#    - msmbuilder
-#    - msmb_data
     - mdtraj
     - hyperopt
     - coverage
