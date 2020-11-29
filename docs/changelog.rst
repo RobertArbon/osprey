@@ -20,7 +20,7 @@ New Features
 + Added ``n_jobs`` flag for ``osprey worker`` to control how many threads are used for cross-validation.
 + Added the ability to specify three different acquisition functions for the gaussian processes strategy: expected improvement `ei`, upper confidence bound, `ucb` and the original Osprey function (the default), `osprey`.
 + Refactored code: GP strategy has been replaced by a general Bayes strategy.  This will eventually allow different surrogate functions, other than Gaussian Process, to be specified.
-
++ Update Python compatability: Now compatable with Python 3.7. MSMBuilder is now an optional.
 
 Bug Fixes
 ~~~~~~~~~
