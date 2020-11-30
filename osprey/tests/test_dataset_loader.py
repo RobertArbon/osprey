@@ -3,7 +3,6 @@ import os
 import shutil
 import tempfile
 from nose.plugins.skip import SkipTest
-
 import numpy as np
 import sklearn.datasets
 # TODO remove old import?
@@ -17,6 +16,16 @@ try:
     skipif = dec.skipif
 except ModuleNotFoundError:
     from numpy.testing.decorators import skipif
+try:
+    __import__('msmbuilder.example_datasets')
+    HAVE_MSMBUILDER = True
+except:
+    HAVE_MSMBUILDER = False
+try:
+    __import__('pyemma')
+    HAVE_PYEMMA = True
+except:
+    HAVE_PYEMMA = False
 
 from osprey.dataset_loaders import (DSVDatasetLoader, FilenameDatasetLoader,
                                     JoblibDatasetLoader, HDF5DatasetLoader,
@@ -24,11 +33,6 @@ from osprey.dataset_loaders import (DSVDatasetLoader, FilenameDatasetLoader,
                                     MSMBuilderDatasetLoader,
                                     NumpyDatasetLoader, SklearnDatasetLoader)
 
-try:
-    __import__('msmbuilder.example_datasets')
-    HAVE_MSMBUILDER = True
-except:
-    HAVE_MSMBUILDER = False
 
 
 def test_FilenameDatasetLoader_1():
@@ -166,6 +170,9 @@ def test_DSVDatasetLoader_1():
         shutil.rmtree(dirname)
 
 
+
+
+
 @skipif(not HAVE_MSMBUILDER, 'this test requires MSMBuilder')
 def test_MDTrajDatasetLoader_1():
     try:
@@ -186,9 +193,9 @@ def test_MDTrajDatasetLoader_1():
     finally:
         shutil.rmtree(dirname)
 
+
 @skipif(not HAVE_MSMBUILDER, 'this test requires MSMBuilder')
 def test_MSMBuilderDatasetLoader_1():
-    # TODO Why does this work when other msmbuilder imports don't?
     from msmbuilder.dataset import dataset
 
     path = tempfile.mkdtemp()
